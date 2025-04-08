@@ -4,14 +4,14 @@
 Adafruit_APDS9960 apds;
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial); // Wait for serial monitor to open
 
   if (!apds.begin()) {
-    Serial.println("Failed to initialize APDS-9960 sensor!");
+    //Serial.println("Failed to initialize APDS-9960 sensor!");
     while (1); // Stop execution if sensor initialization fails
   }
-  Serial.println("APDS-9960 sensor initialized.");
+  //Serial.println("APDS-9960 sensor initialized.");
 
   apds.enableColor(true); // Enable color sensing
   apds.enableProximity(true); // Enable proximity sensor
@@ -20,30 +20,36 @@ void setup() {
 void loop() {
   uint16_t r, g, b, c;
 
-  if (apds.colorDataReady()) {
-    apds.getColorData(&r, &g, &b, &c);
+  //if close enough, then check color and send color!
+  if (apds.readProximity() > 10) {
 
-    // Print the raw RGB and clear values to the Serial Monitor for debugging
-    Serial.print("Red: "); Serial.print(r);
-    Serial.print(" Green: "); Serial.print(g);
-    Serial.print(" Blue: "); Serial.print(b);
-    Serial.print(" Clear: "); Serial.println(c);
+    if (apds.colorDataReady()) {
+      apds.getColorData(&r, &g, &b, &c);
 
-    // Send detected color over serial to Unity based on adjusted thresholds
-    if (r > 30 && g < 30 && b < 30) {  // Adjusted red detection
-      Serial.println("red");  // Send "red" to Unity
-    } 
-    else if (g > 20 && r < 20 && b < 20) {  // Loosened green detection
-      Serial.println("green");  // Send "green" to Unity
-    } 
-    else if (b > 20 && r < 30 && g < 30) {  // Lowered blue threshold
-      Serial.println("blue");  // Send "blue" to Unity
-    } 
-    else if (r > 20 && g > 20 && b > 20 &&
-             abs(r - g) < 25 && abs(r - b) < 25 && abs(g - b) < 25) {  // Loosened white detection
-      Serial.println("white");  // Send "white" to Unity
+      int values[4] = {r,g,b,c};
+    
+      for (int i = 0; i < 4; i++) {
+        Serial.print(values[i]);
+        if (i < 3) Serial.print(',');  // Comma-separated
+      }
+      Serial.println();  // End of line to signal Unity it's one set
+
     }
-  }
 
-  delay(50); // Delay for half a second before reading again
+  } 
+  //Otherwise say "none" and print -1 four times in a row...
+  else {
+
+      int values[4] = {-1,-1,-1,-1};
+    
+      for (int i = 0; i < 4; i++) {
+        Serial.print(values[i]);
+        if (i < 3) Serial.print(',');  // Comma-separated
+      }
+      Serial.println();  // End of line to signal Unity it's one set
+
+  }
+  
+  
+  delay(100); // Delay for half a second before reading again
 }
